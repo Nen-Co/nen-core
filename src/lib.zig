@@ -70,9 +70,11 @@ pub const STATUS_CODES = unified_constants.STATUS_CODES;
 pub const BatchProcessor = batching.BatchProcessor;
 pub const BatchItem = batching.BatchItem;
 pub const BatchConfig = batching.BatchConfig;
-pub const BatchOp = batching.BatchOp;
+pub const MessageType = batching.MessageType;
+pub const BatchResult = batching.BatchResult;
 pub const BatchPriority = batching.BatchPriority;
 pub const BatchStats = batching.BatchStats;
+pub const ClientBatcher = batching.ClientBatcher;
 pub const FileBatchProcessor = batching.FileBatchProcessor;
 pub const NetworkBatchProcessor = batching.NetworkBatchProcessor;
 

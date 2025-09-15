@@ -13,6 +13,7 @@ pub const DODConstants = struct {
     pub const SECTOR_SIZE = 512;
     
     // SIMD Constants
+    pub const SIMD_ALIGNMENT = 32;  // SIMD alignment requirement
     pub const SIMD_WIDTH_F32 = 8;  // 8 f32 values per SIMD operation
     pub const SIMD_WIDTH_F64 = 4;  // 4 f64 values per SIMD operation
     pub const SIMD_WIDTH_I32 = 8;  // 8 i32 values per SIMD operation
