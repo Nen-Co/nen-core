@@ -14,7 +14,7 @@ pub const NenError = error{
     BufferOverflow,
     BufferUnderflow,
     MemoryLeak,
-    
+
     // I/O errors
     IOError,
     FileNotFound,
@@ -23,7 +23,7 @@ pub const NenError = error{
     NetworkError,
     ConnectionFailed,
     Timeout,
-    
+
     // Data errors
     InvalidData,
     CorruptedData,
@@ -34,7 +34,7 @@ pub const NenError = error{
     InvalidIndex,
     InvalidKey,
     InvalidValue,
-    
+
     // Numerical errors
     DivisionByZero,
     Overflow,
@@ -42,14 +42,14 @@ pub const NenError = error{
     InvalidOperation,
     PrecisionError,
     ConvergenceError,
-    
+
     // Configuration errors
     InvalidConfiguration,
     MissingConfiguration,
     InvalidParameter,
     FeatureNotEnabled,
     VersionMismatch,
-    
+
     // System errors
     SystemError,
     ResourceExhausted,
@@ -57,14 +57,14 @@ pub const NenError = error{
     InvalidState,
     OperationFailed,
     InternalError,
-    
+
     // Security errors
     AuthenticationFailed,
     AuthorizationFailed,
     SecurityViolation,
     InvalidToken,
     AccessDenied,
-    
+
     // Network errors
     RequestTimeout,
     InvalidMessage,
@@ -72,34 +72,34 @@ pub const NenError = error{
     ConnectionLost,
     ServerError,
     ClientError,
-    
+
     // Database errors
     DatabaseError,
     QueryError,
     TransactionError,
     ConstraintViolation,
     Deadlock,
-    
+
     // Cache errors
     CacheError,
     CacheMiss,
     CacheFull,
     CacheCorrupted,
-    
+
     // Inference errors
     ModelError,
     InferenceError,
     TokenizationError,
     DetokenizationError,
     GenerationError,
-    
+
     // ML errors
     TrainingError,
     ValidationError,
     PredictionError,
     ModelNotFound,
     InvalidModel,
-    
+
     // Format errors
     FormatError,
     SerializationError,
@@ -114,7 +114,7 @@ pub const ErrorContext = struct {
     file: []const u8,
     line: u32,
     function: []const u8,
-    
+
     pub fn init(message: []const u8, file: []const u8, line: u32, function: []const u8) ErrorContext {
         return ErrorContext{
             .message = message,
@@ -123,7 +123,7 @@ pub const ErrorContext = struct {
             .function = function,
         };
     }
-    
+
     pub fn format(self: ErrorContext, comptime fmt: []const u8, args: anytype) []const u8 {
         _ = fmt;
         _ = args;
@@ -162,59 +162,34 @@ pub const ErrorHandler = struct {
             else => NenError.InternalError,
         };
     }
-    
+
     /// Check if error is recoverable
     pub fn isRecoverable(err: NenError) bool {
         return switch (err) {
-            .Timeout,
-            .ConnectionLost,
-            .NetworkError,
-            .RequestTimeout,
-            .ConnectionFailed,
-            .ServerError,
-            .CacheMiss,
-            .ResourceExhausted => true,
+            .Timeout, .ConnectionLost, .NetworkError, .RequestTimeout, .ConnectionFailed, .ServerError, .CacheMiss, .ResourceExhausted => true,
             else => false,
         };
     }
-    
+
     /// Check if error is fatal
     pub fn isFatal(err: NenError) bool {
         return switch (err) {
-            .OutOfMemory,
-            .SystemError,
-            .InternalError,
-            .CorruptedData,
-            .SecurityViolation,
-            .InvalidState => true,
+            .OutOfMemory, .SystemError, .InternalError, .CorruptedData, .SecurityViolation, .InvalidState => true,
             else => false,
         };
     }
-    
+
     /// Get error severity level
     pub fn getSeverity(err: NenError) ErrorSeverity {
         return switch (err) {
-            .OutOfMemory,
-            .SystemError,
-            .InternalError,
-            .CorruptedData,
-            .SecurityViolation => .Critical,
-            
-            .PoolExhausted,
-            .IOError,
-            .DatabaseError,
-            .ModelError,
-            .InferenceError => .High,
-            
-            .InvalidData,
-            .InvalidFormat,
-            .InvalidConfiguration,
-            .CacheError => .Medium,
-            
-            .CacheMiss,
-            .Timeout,
-            .ConnectionLost => .Low,
-            
+            .OutOfMemory, .SystemError, .InternalError, .CorruptedData, .SecurityViolation => .Critical,
+
+            .PoolExhausted, .IOError, .DatabaseError, .ModelError, .InferenceError => .High,
+
+            .InvalidData, .InvalidFormat, .InvalidConfiguration, .CacheError => .Medium,
+
+            .CacheMiss, .Timeout, .ConnectionLost => .Low,
+
             else => .Medium,
         };
     }
@@ -234,47 +209,22 @@ pub const ErrorReporter = struct {
     pub fn report(err: NenError, context: ErrorContext) void {
         const severity = ErrorHandler.getSeverity(err);
         const is_fatal = ErrorHandler.isFatal(err);
-        
+
         if (is_fatal) {
-            std.debug.panic("FATAL ERROR: {} in {}:{} ({}) - {}", .{ 
-                @errorName(err), 
-                context.file, 
-                context.line, 
-                context.function, 
-                context.message 
-            });
+            std.debug.panic("FATAL ERROR: {} in {}:{} ({}) - {}", .{ @errorName(err), context.file, context.line, context.function, context.message });
         } else {
-            std.debug.print("ERROR [{}]: {} in {}:{} ({}) - {}\n", .{ 
-                @tagName(severity),
-                @errorName(err), 
-                context.file, 
-                context.line, 
-                context.function, 
-                context.message 
-            });
+            std.debug.print("ERROR [{}]: {} in {}:{} ({}) - {}\n", .{ @tagName(severity), @errorName(err), context.file, context.line, context.function, context.message });
         }
     }
-    
+
     /// Report a warning
     pub fn warn(message: []const u8, context: ErrorContext) void {
-        std.debug.print("WARNING: {} in {}:{} ({}) - {}\n", .{ 
-            message, 
-            context.file, 
-            context.line, 
-            context.function, 
-            context.message 
-        });
+        std.debug.print("WARNING: {} in {}:{} ({}) - {}\n", .{ message, context.file, context.line, context.function, context.message });
     }
-    
+
     /// Report an info message
     pub fn info(message: []const u8, context: ErrorContext) void {
-        std.debug.print("INFO: {} in {}:{} ({}) - {}\n", .{ 
-            message, 
-            context.file, 
-            context.line, 
-            context.function, 
-            context.message 
-        });
+        std.debug.print("INFO: {} in {}:{} ({}) - {}\n", .{ message, context.file, context.line, context.function, context.message });
     }
 };
 
@@ -284,48 +234,48 @@ pub const ErrorRecovery = struct {
     pub fn retryWithBackoff(comptime T: type, operation: fn () T!void, max_retries: u32, base_delay_ms: u32) T!void {
         var retries: u32 = 0;
         var delay_ms = base_delay_ms;
-        
+
         while (retries < max_retries) {
             const result = operation();
             if (result) |_| return;
-            
+
             const err = result catch |e| e;
             if (!ErrorHandler.isRecoverable(err)) {
                 return result;
             }
-            
+
             std.time.sleep(delay_ms * 1_000_000); // Convert to nanoseconds
             delay_ms *= 2; // Exponential backoff
             retries += 1;
         }
-        
+
         return operation();
     }
-    
+
     /// Fallback to alternative operation
     pub fn fallback(comptime T: type, primary: fn () T!void, fallback_op: fn () T!void) T!void {
         const result = primary();
         if (result) |_| return;
-        
+
         const err = result catch |e| e;
         if (ErrorHandler.isRecoverable(err)) {
             return fallback_op();
         }
-        
+
         return result;
     }
-    
+
     /// Graceful degradation
     pub fn degrade(comptime T: type, operation: fn () T!void, degraded_op: fn () T!void) T!void {
         const result = operation();
         if (result) |_| return;
-        
+
         const err = result catch |e| e;
         if (ErrorHandler.isRecoverable(err)) {
             ErrorReporter.warn("Operation failed, using degraded mode", ErrorContext.init("", "", 0, ""));
             return degraded_op();
         }
-        
+
         return result;
     }
 };
@@ -344,7 +294,7 @@ test "Error severity" {
 
 // test "Error recovery" {
 //     var attempt_count: u32 = 0;
-//     
+//
 //     const operation = struct {
 //         fn op() NenError!void {
 //             attempt_count += 1;
@@ -354,7 +304,7 @@ test "Error severity" {
 //             return;
 //         }
 //     }.op;
-//     
+//
 //     try ErrorRecovery.retryWithBackoff(void, operation, 5, 1);
 //     try std.testing.expectEqual(@as(u32, 3), attempt_count);
 // }

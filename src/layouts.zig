@@ -14,11 +14,11 @@ pub const DODIOLayout = struct {
     batch_positions: [constants.DODConstants.SIMD_KEY_BATCH]u32 align(constants.DODConstants.ALIGN_32),
     batch_types: [constants.DODConstants.SIMD_KEY_BATCH]u8 align(constants.DODConstants.ALIGN_8),
     batch_active: [constants.DODConstants.SIMD_KEY_BATCH]bool align(constants.DODConstants.ALIGN_8),
-    
+
     // Processing statistics
     operations_processed: u64 = 0,
     batches_completed: u64 = 0,
-    
+
     pub fn init() DODIOLayout {
         return DODIOLayout{
             .batch_ids = [_]u64{0} ** constants.DODConstants.SIMD_KEY_BATCH,
@@ -28,7 +28,7 @@ pub const DODIOLayout = struct {
             .batch_active = [_]bool{false} ** constants.DODConstants.SIMD_KEY_BATCH,
         };
     }
-    
+
     pub fn reset(self: *DODIOLayout) void {
         @memset(&self.batch_ids, 0);
         @memset(&self.batch_sizes, 0);
@@ -38,7 +38,7 @@ pub const DODIOLayout = struct {
         self.operations_processed = 0;
         self.batches_completed = 0;
     }
-    
+
     pub fn addOperation(self: *DODIOLayout, id: u64, size: u32, position: u32, @"type": u8) bool {
         for (0..constants.DODConstants.SIMD_KEY_BATCH) |i| {
             if (!self.batch_active[i]) {
@@ -52,7 +52,7 @@ pub const DODIOLayout = struct {
         }
         return false; // Batch is full
     }
-    
+
     pub fn getActiveCount(self: *const DODIOLayout) usize {
         var count: usize = 0;
         for (self.batch_active) |active| {
@@ -72,17 +72,17 @@ pub const DODNodeLayout = struct {
     node_weights: []f32,
     node_embeddings: []f32,
     node_active: []bool,
-    
+
     // Execution tracking
     node_execution_times: []u64,
     node_dependencies: []u32,
     node_children: []u32,
-    
+
     // Metadata
     node_count: usize,
     max_nodes: usize,
     embedding_dim: usize,
-    
+
     pub fn init(allocator: std.mem.Allocator, max_nodes: usize, embedding_dim: usize) !DODNodeLayout {
         const node_ids = try allocator.alloc(u64, max_nodes);
         const node_types = try allocator.alloc(u32, max_nodes);
@@ -93,7 +93,7 @@ pub const DODNodeLayout = struct {
         const node_execution_times = try allocator.alloc(u64, max_nodes);
         const node_dependencies = try allocator.alloc(u32, max_nodes);
         const node_children = try allocator.alloc(u32, max_nodes);
-        
+
         return DODNodeLayout{
             .node_ids = node_ids,
             .node_types = node_types,
@@ -109,7 +109,7 @@ pub const DODNodeLayout = struct {
             .embedding_dim = embedding_dim,
         };
     }
-    
+
     pub fn deinit(self: *DODNodeLayout, allocator: std.mem.Allocator) void {
         allocator.free(self.node_ids);
         allocator.free(self.node_types);
@@ -121,32 +121,32 @@ pub const DODNodeLayout = struct {
         allocator.free(self.node_dependencies);
         allocator.free(self.node_children);
     }
-    
+
     pub fn addNode(self: *DODNodeLayout, id: u64, @"type": u32, weight: f32, embedding: []const f32) bool {
         if (self.node_count >= self.max_nodes) return false;
-        
+
         const index = self.node_count;
         self.node_ids[index] = id;
         self.node_types[index] = @"type";
         self.node_states[index] = 0; // Inactive
         self.node_weights[index] = weight;
         self.node_active[index] = true;
-        
+
         // Copy embedding
         const embedding_start = index * self.embedding_dim;
         const embedding_end = embedding_start + self.embedding_dim;
         @memcpy(self.node_embeddings[embedding_start..embedding_end], embedding);
-        
+
         self.node_count += 1;
         return true;
     }
-    
+
     pub fn getNodeEmbedding(self: *const DODNodeLayout, index: usize) []const f32 {
         const start = index * self.embedding_dim;
         const end = start + self.embedding_dim;
         return self.node_embeddings[start..end];
     }
-    
+
     pub fn setNodeEmbedding(self: *DODNodeLayout, index: usize, embedding: []const f32) void {
         const start = index * self.embedding_dim;
         const end = start + self.embedding_dim;
@@ -164,11 +164,11 @@ pub const DODEdgeLayout = struct {
     edge_weights: []f32,
     edge_types: []u8,
     edge_active: []bool,
-    
+
     // Metadata
     edge_count: usize,
     max_edges: usize,
-    
+
     pub fn init(allocator: std.mem.Allocator, max_edges: usize) !DODEdgeLayout {
         const edge_ids = try allocator.alloc(u64, max_edges);
         const edge_sources = try allocator.alloc(u32, max_edges);
@@ -176,7 +176,7 @@ pub const DODEdgeLayout = struct {
         const edge_weights = try allocator.alloc(f32, max_edges);
         const edge_types = try allocator.alloc(u8, max_edges);
         const edge_active = try allocator.alloc(bool, max_edges);
-        
+
         return DODEdgeLayout{
             .edge_ids = edge_ids,
             .edge_sources = edge_sources,
@@ -188,7 +188,7 @@ pub const DODEdgeLayout = struct {
             .max_edges = max_edges,
         };
     }
-    
+
     pub fn deinit(self: *DODEdgeLayout, allocator: std.mem.Allocator) void {
         allocator.free(self.edge_ids);
         allocator.free(self.edge_sources);
@@ -197,10 +197,10 @@ pub const DODEdgeLayout = struct {
         allocator.free(self.edge_types);
         allocator.free(self.edge_active);
     }
-    
+
     pub fn addEdge(self: *DODEdgeLayout, id: u64, source: u32, target: u32, weight: f32, @"type": u8) bool {
         if (self.edge_count >= self.max_edges) return false;
-        
+
         const index = self.edge_count;
         self.edge_ids[index] = id;
         self.edge_sources[index] = source;
@@ -208,7 +208,7 @@ pub const DODEdgeLayout = struct {
         self.edge_weights[index] = weight;
         self.edge_types[index] = @"type";
         self.edge_active[index] = true;
-        
+
         self.edge_count += 1;
         return true;
     }
@@ -223,19 +223,19 @@ pub const DODTensorLayout = struct {
     tensor_strides: []u32,
     tensor_types: []u8,
     tensor_active: []bool,
-    
+
     // Metadata
     tensor_count: usize,
     max_tensors: usize,
     max_elements: usize,
-    
+
     pub fn init(allocator: std.mem.Allocator, max_tensors: usize, max_elements: usize) !DODTensorLayout {
         const tensor_data = try allocator.alloc(f32, max_elements);
         const tensor_shapes = try allocator.alloc(u32, max_tensors * 4); // Max 4 dimensions
         const tensor_strides = try allocator.alloc(u32, max_tensors * 4);
         const tensor_types = try allocator.alloc(u8, max_tensors);
         const tensor_active = try allocator.alloc(bool, max_tensors);
-        
+
         return DODTensorLayout{
             .tensor_data = tensor_data,
             .tensor_shapes = tensor_shapes,
@@ -247,7 +247,7 @@ pub const DODTensorLayout = struct {
             .max_elements = max_elements,
         };
     }
-    
+
     pub fn deinit(self: *DODTensorLayout, allocator: std.mem.Allocator) void {
         allocator.free(self.tensor_data);
         allocator.free(self.tensor_shapes);
@@ -255,15 +255,15 @@ pub const DODTensorLayout = struct {
         allocator.free(self.tensor_types);
         allocator.free(self.tensor_active);
     }
-    
+
     pub fn addTensor(self: *DODTensorLayout, shape: []const u32, data: []const f32, @"type": u8) bool {
         if (self.tensor_count >= self.max_tensors) return false;
         if (data.len > self.max_elements) return false;
-        
+
         const index = self.tensor_count;
         const shape_start = index * 4;
         const shape_end = shape_start + 4;
-        
+
         // Copy shape
         @memset(self.tensor_shapes[shape_start..shape_end], 0);
         for (shape, 0..) |dim, i| {
@@ -271,20 +271,20 @@ pub const DODTensorLayout = struct {
                 self.tensor_shapes[shape_start + i] = dim;
             }
         }
-        
+
         // Copy data
         @memcpy(self.tensor_data[0..data.len], data);
-        
+
         self.tensor_types[index] = @"type";
         self.tensor_active[index] = true;
         self.tensor_count += 1;
-        
+
         return true;
     }
-    
+
     pub fn getTensorData(self: *const DODTensorLayout, index: usize) []const f32 {
         const shape_start = index * 4;
-        const shape = self.tensor_shapes[shape_start..shape_start + 4];
+        const shape = self.tensor_shapes[shape_start .. shape_start + 4];
         const elements = shape[0] * shape[1] * shape[2] * shape[3];
         return self.tensor_data[0..elements];
     }
@@ -299,19 +299,19 @@ pub const DODBatchLayout = struct {
     batch_sizes: []u32,
     batch_types: []u8,
     batch_active: []bool,
-    
+
     // Processing metadata
     batch_count: usize,
     max_batches: usize,
     max_elements: usize,
-    
+
     pub fn init(allocator: std.mem.Allocator, max_batches: usize, max_elements: usize) !DODBatchLayout {
         const batch_data = try allocator.alloc(f32, max_elements);
         const batch_indices = try allocator.alloc(u32, max_batches);
         const batch_sizes = try allocator.alloc(u32, max_batches);
         const batch_types = try allocator.alloc(u8, max_batches);
         const batch_active = try allocator.alloc(bool, max_batches);
-        
+
         return DODBatchLayout{
             .batch_data = batch_data,
             .batch_indices = batch_indices,
@@ -323,7 +323,7 @@ pub const DODBatchLayout = struct {
             .max_elements = max_elements,
         };
     }
-    
+
     pub fn deinit(self: *DODBatchLayout, allocator: std.mem.Allocator) void {
         allocator.free(self.batch_data);
         allocator.free(self.batch_indices);
@@ -331,20 +331,20 @@ pub const DODBatchLayout = struct {
         allocator.free(self.batch_types);
         allocator.free(self.batch_active);
     }
-    
+
     pub fn addBatch(self: *DODBatchLayout, data: []const f32, size: u32, @"type": u8) bool {
         if (self.batch_count >= self.max_batches) return false;
         if (data.len > self.max_elements) return false;
-        
+
         const index = self.batch_count;
         self.batch_indices[index] = @as(u32, @intCast(data.len));
         self.batch_sizes[index] = size;
         self.batch_types[index] = @"type";
         self.batch_active[index] = true;
-        
+
         // Copy data
         @memcpy(self.batch_data[0..data.len], data);
-        
+
         self.batch_count += 1;
         return true;
     }
@@ -362,7 +362,7 @@ test "DODIOLayout" {
 test "DODNodeLayout" {
     var layout = try DODNodeLayout.init(std.testing.allocator, 10, 4);
     defer layout.deinit(std.testing.allocator);
-    
+
     const embedding = [_]f32{ 1.0, 2.0, 3.0, 4.0 };
     try std.testing.expect(layout.addNode(1, 2, 0.5, &embedding));
     try std.testing.expect(layout.node_count == 1);
@@ -371,7 +371,7 @@ test "DODNodeLayout" {
 test "DODEdgeLayout" {
     var layout = try DODEdgeLayout.init(std.testing.allocator, 10);
     defer layout.deinit(std.testing.allocator);
-    
+
     try std.testing.expect(layout.addEdge(1, 0, 1, 0.8, 1));
     try std.testing.expect(layout.edge_count == 1);
 }
@@ -379,7 +379,7 @@ test "DODEdgeLayout" {
 test "DODTensorLayout" {
     var layout = try DODTensorLayout.init(std.testing.allocator, 10, 1000);
     defer layout.deinit(std.testing.allocator);
-    
+
     const shape = [_]u32{ 2, 3, 4, 1 };
     const data = [_]f32{ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
     try std.testing.expect(layout.addTensor(&shape, &data, 1));
@@ -389,7 +389,7 @@ test "DODTensorLayout" {
 test "DODBatchLayout" {
     var layout = try DODBatchLayout.init(std.testing.allocator, 10, 1000);
     defer layout.deinit(std.testing.allocator);
-    
+
     const data = [_]f32{ 1.0, 2.0, 3.0, 4.0 };
     try std.testing.expect(layout.addBatch(&data, 4, 1));
     try std.testing.expect(layout.batch_count == 1);

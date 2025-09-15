@@ -16,7 +16,7 @@ pub const NumericalCore = struct {
         pub fn addVectors(a: []const f32, b: []const f32, c: []f32) void {
             const simd_width = constants.DODConstants.SIMD_WIDTH_F32;
             const len = @min(a.len, @min(b.len, c.len));
-            
+
             // Process SIMD batches
             var i: usize = 0;
             while (i + simd_width <= len) {
@@ -26,7 +26,7 @@ pub const NumericalCore = struct {
                 }
                 i += simd_width;
             }
-            
+
             // Handle remaining elements
             while (i < len) {
                 c[i] = a[i] + b[i];
@@ -38,7 +38,7 @@ pub const NumericalCore = struct {
         pub fn multiplyVectors(a: []const f32, b: []const f32, c: []f32) void {
             const simd_width = constants.DODConstants.SIMD_WIDTH_F32;
             const len = @min(a.len, @min(b.len, c.len));
-            
+
             var i: usize = 0;
             while (i + simd_width <= len) {
                 for (0..simd_width) |j| {
@@ -46,7 +46,7 @@ pub const NumericalCore = struct {
                 }
                 i += simd_width;
             }
-            
+
             while (i < len) {
                 c[i] = a[i] * b[i];
                 i += 1;
@@ -57,7 +57,7 @@ pub const NumericalCore = struct {
         pub fn multiplyScalar(a: []const f32, c: []f32, scalar: f32) void {
             const simd_width = constants.DODConstants.SIMD_WIDTH_F32;
             const len = @min(a.len, c.len);
-            
+
             var i: usize = 0;
             while (i + simd_width <= len) {
                 for (0..simd_width) |j| {
@@ -65,7 +65,7 @@ pub const NumericalCore = struct {
                 }
                 i += simd_width;
             }
-            
+
             while (i < len) {
                 c[i] = a[i] * scalar;
                 i += 1;
@@ -76,10 +76,10 @@ pub const NumericalCore = struct {
         pub fn dotProduct(a: []const f32, b: []const f32) f32 {
             const simd_width = constants.DODConstants.SIMD_WIDTH_F32;
             const len = @min(a.len, b.len);
-            
+
             var total: f32 = 0.0;
             var i: usize = 0;
-            
+
             // Process SIMD batches
             while (i + simd_width <= len) {
                 var batch_sum: f32 = 0.0;
@@ -89,13 +89,13 @@ pub const NumericalCore = struct {
                 total += batch_sum;
                 i += simd_width;
             }
-            
+
             // Handle remaining elements
             while (i < len) {
                 total += a[i] * b[i];
                 i += 1;
             }
-            
+
             return total;
         }
 
@@ -103,10 +103,10 @@ pub const NumericalCore = struct {
         pub fn sum(a: []const f32) f32 {
             const simd_width = constants.DODConstants.SIMD_WIDTH_F32;
             const len = a.len;
-            
+
             var total: f32 = 0.0;
             var i: usize = 0;
-            
+
             while (i + simd_width <= len) {
                 var batch_sum: f32 = 0.0;
                 for (0..simd_width) |j| {
@@ -115,12 +115,12 @@ pub const NumericalCore = struct {
                 total += batch_sum;
                 i += simd_width;
             }
-            
+
             while (i < len) {
                 sum += a[i];
                 i += 1;
             }
-            
+
             return total;
         }
     };
@@ -132,29 +132,29 @@ pub const NumericalCore = struct {
         pub fn matrixMultiply(a: []const f32, b: []const f32, c: []f32, m: usize, n: usize, k: usize) void {
             // Clear output matrix
             @memset(c, 0.0);
-            
+
             // DOD optimization: process in cache-friendly blocks
             const block_size = 64; // Cache-friendly block size
-            
+
             for (0..m) |i| {
                 for (0..k) |j| {
                     var total: f32 = 0.0;
-                    
+
                     // Process in blocks for cache efficiency
                     var l: usize = 0;
                     while (l + block_size <= n) {
-                for (0..block_size) |block_l| {
-                    total += a[i * n + l + block_l] * b[(l + block_l) * k + j];
-                }
+                        for (0..block_size) |block_l| {
+                            total += a[i * n + l + block_l] * b[(l + block_l) * k + j];
+                        }
                         l += block_size;
                     }
-                    
+
                     // Handle remaining elements
                     while (l < n) {
                         total += a[i * n + l] * b[l * k + j];
                         l += 1;
                     }
-                    
+
                     c[i * k + j] = total;
                 }
             }
@@ -182,7 +182,7 @@ pub const NumericalCore = struct {
         pub fn relu(input: []const f32, output: []f32) void {
             const simd_width = constants.DODConstants.SIMD_WIDTH_F32;
             const len = @min(input.len, output.len);
-            
+
             var i: usize = 0;
             while (i + simd_width <= len) {
                 for (0..simd_width) |j| {
@@ -191,7 +191,7 @@ pub const NumericalCore = struct {
                 }
                 i += simd_width;
             }
-            
+
             while (i < len) {
                 const val = input[i];
                 output[i] = if (val > 0.0) val else 0.0;
@@ -203,7 +203,7 @@ pub const NumericalCore = struct {
         pub fn sigmoid(input: []const f32, output: []f32) void {
             const simd_width = constants.DODConstants.SIMD_WIDTH_F32;
             const len = @min(input.len, output.len);
-            
+
             var i: usize = 0;
             while (i + simd_width <= len) {
                 for (0..simd_width) |j| {
@@ -212,7 +212,7 @@ pub const NumericalCore = struct {
                 }
                 i += simd_width;
             }
-            
+
             while (i < len) {
                 const val = input[i];
                 output[i] = 1.0 / (1.0 + std.math.exp(-val));
@@ -224,7 +224,7 @@ pub const NumericalCore = struct {
         pub fn tanh(input: []const f32, output: []f32) void {
             const simd_width = constants.DODConstants.SIMD_WIDTH_F32;
             const len = @min(input.len, output.len);
-            
+
             var i: usize = 0;
             while (i + simd_width <= len) {
                 for (0..simd_width) |j| {
@@ -233,7 +233,7 @@ pub const NumericalCore = struct {
                 }
                 i += simd_width;
             }
-            
+
             while (i < len) {
                 const val = input[i];
                 output[i] = std.math.tanh(val);
@@ -244,13 +244,13 @@ pub const NumericalCore = struct {
         /// SIMD-optimized Softmax activation
         pub fn softmax(input: []const f32, output: []f32) void {
             if (input.len == 0) return;
-            
+
             // Find maximum for numerical stability
             var max_val = input[0];
             for (input[1..]) |val| {
                 max_val = @max(max_val, val);
             }
-            
+
             // Compute exponentials and sum
             var total: f32 = 0.0;
             for (input, 0..) |val, i| {
@@ -258,7 +258,7 @@ pub const NumericalCore = struct {
                 output[i] = exp_val;
                 total += exp_val;
             }
-            
+
             // Normalize
             if (total > 0.0) {
                 const inv_sum = 1.0 / total;
@@ -280,15 +280,15 @@ pub const NumericalCore = struct {
         /// SIMD-optimized variance calculation
         pub fn variance(data: []const f32) f32 {
             if (data.len <= 1) return 0.0;
-            
+
             const mean_val = mean(data);
             var sum_sq_diff: f32 = 0.0;
-            
+
             for (data) |val| {
                 const diff = val - mean_val;
                 sum_sq_diff += diff * diff;
             }
-            
+
             return sum_sq_diff / @as(f32, @floatFromInt(data.len - 1));
         }
 
@@ -300,15 +300,15 @@ pub const NumericalCore = struct {
         /// SIMD-optimized min/max finding
         pub fn minMax(data: []const f32) struct { min: f32, max: f32 } {
             if (data.len == 0) return .{ .min = 0.0, .max = 0.0 };
-            
+
             var min_val = data[0];
             var max_val = data[0];
-            
+
             for (data[1..]) |val| {
                 min_val = @min(min_val, val);
                 max_val = @max(max_val, val);
             }
-            
+
             return .{ .min = min_val, .max = max_val };
         }
     };
@@ -329,24 +329,24 @@ pub const NumericalCore = struct {
         /// Fast approximation of natural logarithm
         pub fn fastLn(x: f32) f32 {
             if (x <= 0.0) return -std.math.inf(f32);
-            
+
             const bits = @as(u32, @bitCast(x));
             const exponent = @as(i32, @intCast((bits >> 23) & 0xFF)) - 127;
             const mantissa = @as(f32, @bitCast((bits & 0x7FFFFF) | 0x3F800000));
-            
-            return @as(f32, @floatFromInt(exponent)) * constants.DODConstants.LN_2 + 
-                   (mantissa - 1.0) * (1.0 + (mantissa - 1.0) * (-0.5 + (mantissa - 1.0) * 0.3333333333333333));
+
+            return @as(f32, @floatFromInt(exponent)) * constants.DODConstants.LN_2 +
+                (mantissa - 1.0) * (1.0 + (mantissa - 1.0) * (-0.5 + (mantissa - 1.0) * 0.3333333333333333));
         }
 
         /// Fast approximation of square root
         pub fn fastSqrt(x: f32) f32 {
             if (x < 0.0) return std.math.nan(f32);
             if (x == 0.0) return 0.0;
-            
+
             const bits = @as(u32, @bitCast(x));
             const exponent = @as(i32, @intCast((bits >> 23) & 0xFF)) - 127;
             const mantissa = @as(f32, @bitCast((bits & 0x7FFFFF) | 0x3F800000));
-            
+
             const sqrt_mantissa = 1.0 + (mantissa - 1.0) * 0.5;
             return @as(f32, @bitCast(@as(u32, @intCast((exponent / 2) + 127)) << 23)) * sqrt_mantissa;
         }
@@ -379,7 +379,7 @@ test "VectorMath basic operations" {
     const a = [_]f32{ 1.0, 2.0, 3.0, 4.0 };
     const b = [_]f32{ 5.0, 6.0, 7.0, 8.0 };
     var c = [_]f32{ 0.0, 0.0, 0.0, 0.0 };
-    
+
     NumericalCore.VectorMath.addVectors(&a, &b, &c);
     try std.testing.expectEqual(@as(f32, 6.0), c[0]);
     try std.testing.expectEqual(@as(f32, 8.0), c[1]);
@@ -397,7 +397,7 @@ test "VectorMath dot product" {
 test "Activations ReLU" {
     const input = [_]f32{ -1.0, 0.0, 1.0, 2.0 };
     var output = [_]f32{ 0.0, 0.0, 0.0, 0.0 };
-    
+
     NumericalCore.Activations.relu(&input, &output);
     try std.testing.expectEqual(@as(f32, 0.0), output[0]);
     try std.testing.expectEqual(@as(f32, 0.0), output[1]);
@@ -416,7 +416,7 @@ test "FastMath approximations" {
     const fast_exp = NumericalCore.FastMath.fastExp(x);
     const fast_ln = NumericalCore.FastMath.fastLn(x);
     const fast_sqrt = NumericalCore.FastMath.fastSqrt(x);
-    
+
     // These should be reasonable approximations
     try std.testing.expect(fast_exp > 0.0);
     try std.testing.expect(fast_ln >= 0.0);

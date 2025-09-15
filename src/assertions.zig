@@ -94,7 +94,7 @@ pub const DODAssertions = struct {
         if (actual_dims.len != expected_dims.len) {
             std.debug.panic("Tensor dimension count mismatch in {s}: expected {} dims, got {}", .{ context, expected_dims.len, actual_dims.len });
         }
-        
+
         for (actual_dims, expected_dims, 0..) |actual, expected, i| {
             if (actual != expected) {
                 std.debug.panic("Tensor dimension {} mismatch in {s}: expected {}, got {}", .{ i, context, expected, actual });
@@ -106,12 +106,12 @@ pub const DODAssertions = struct {
     pub fn assertCacheFriendly(ptr: *const anyopaque, size: usize, comptime context: []const u8) void {
         const addr = @intFromPtr(ptr);
         const cache_line_size = constants.DODConstants.CACHE_LINE_SIZE;
-        
+
         // Check that the memory region doesn't cross too many cache lines
         const start_line = addr / cache_line_size;
         const end_line = (addr + size - 1) / cache_line_size;
         const lines_used = end_line - start_line + 1;
-        
+
         if (lines_used > 4) { // Allow up to 4 cache lines for efficiency
             std.debug.panic("Memory layout not cache-friendly in {s}: {} bytes span {} cache lines", .{ context, size, lines_used });
         }
@@ -121,7 +121,7 @@ pub const DODAssertions = struct {
     pub fn assertSIMDAlign(ptr: *const anyopaque, simd_width: usize, comptime context: []const u8) void {
         const addr = @intFromPtr(ptr);
         const alignment = simd_width * @sizeOf(f32);
-        
+
         if (addr % alignment != 0) {
             std.debug.panic("SIMD alignment assertion failed in {s}: pointer {} not aligned to {} for SIMD width {}", .{ context, addr, alignment, simd_width });
         }
@@ -163,7 +163,7 @@ pub const PerformanceAssertions = struct {
     pub fn assertCacheHitRate(hits: u64, misses: u64, min_hit_rate: f32, comptime context: []const u8) void {
         const total = hits + misses;
         if (total == 0) return;
-        
+
         const hit_rate = @as(f32, @floatFromInt(hits)) / @as(f32, @floatFromInt(total));
         if (hit_rate < min_hit_rate) {
             std.debug.panic("Cache hit rate too low in {s}: {:.2}% < {:.2}%", .{ context, hit_rate * 100.0, min_hit_rate * 100.0 });
@@ -214,7 +214,7 @@ test "DOD assertions" {
     const dims = [_]usize{ 2, 3, 4 };
     const expected = [_]usize{ 2, 3, 4 };
     DODAssertions.assertTensorDims(&dims, &expected, "test");
-    
+
     const ptr = @as(*const anyopaque, @ptrCast(&dims));
     DODAssertions.assertCacheFriendly(ptr, @sizeOf(@TypeOf(dims)), "test");
 }
