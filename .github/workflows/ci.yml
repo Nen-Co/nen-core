@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-and-build:
+    name: Test and Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        zig-version: [0.15.1]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        zig-version: ${{ matrix.zig-version }}
+
+    - name: Build Debug
+      run: |
+        echo "🔨 Building Debug on ${{ matrix.os }}"
+        zig build -Doptimize=Debug
+
+    - name: Build ReleaseSafe
+      run: |
+        echo "🔨 Building ReleaseSafe on ${{ matrix.os }}"
+        zig build -Doptimize=ReleaseSafe
+
+    - name: Build ReleaseFast
+      run: |
+        echo "🔨 Building ReleaseFast on ${{ matrix.os }}"
+        zig build -Doptimize=ReleaseFast
+
+    - name: Run Tests
+      run: |
+        echo "🧪 Running tests on ${{ matrix.os }}"
+        zig build test
+
+    - name: Run Examples
+      run: |
+        echo "📚 Running examples on ${{ matrix.os }}"
+        zig build run-numerical
+        zig build run-memory
+        zig build run-unified
+        zig build run-batching
+        zig build run-inline
+        zig build run-release
+
+    - name: Format Check
+      run: |
+        echo "🎨 Checking code formatting"
+        zig fmt --check .
+
+  test-windows:
+    name: Test Windows
+    runs-on: windows-latest
+    if: runner.os == 'Windows'
+    shell: cmd
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        zig-version: 0.15.1
+
+    - name: Build and Test
+      run: |
+        echo Building and testing on Windows
+        zig build -Doptimize=ReleaseFast
+        zig build test
+        zig build run-numerical
+        zig build run-memory

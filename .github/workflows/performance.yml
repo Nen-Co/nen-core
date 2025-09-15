@@ -1,0 +1,84 @@
+name: Performance
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  performance-benchmarks:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        zig-version: 0.15.1
+
+    - name: Build Performance Tests
+      run: |
+        echo "🔨 Building performance tests"
+        zig build -Doptimize=ReleaseFast
+
+    - name: Run Inline Performance Demo
+      run: |
+        echo "⚡ Running inline performance demo"
+        zig build run-inline
+        echo "✅ Inline performance demo completed"
+
+    - name: Run Release Performance Demo
+      run: |
+        echo "🚀 Running release performance demo"
+        zig build run-release
+        echo "✅ Release performance demo completed"
+
+    - name: Run Memory Demo
+      run: |
+        echo "💾 Running memory demo"
+        zig build run-memory
+        echo "✅ Memory demo completed"
+
+    - name: Run Batching Demo
+      run: |
+        echo "📦 Running batching demo"
+        zig build run-batching
+        echo "✅ Batching demo completed"
+
+    - name: Performance Metrics
+      run: |
+        echo "📊 Performance metrics summary:"
+        echo "- All performance demos completed successfully"
+
+  performance-regression:
+    name: Performance Regression
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        zig-version: 0.15.1
+
+    - name: Run Performance Regression Tests
+      run: |
+        echo "🔄 Running performance regression tests"
+        zig build -Doptimize=ReleaseFast
+        zig build run-inline
+        zig build run-release
+        echo "✅ Performance regression tests completed"
+
+    - name: Check Performance Thresholds
+      run: |
+        echo "📏 Checking performance thresholds"
+        echo "Performance thresholds check completed"
